@@ -785,7 +785,30 @@ const { error } = await db
       "Dépensé : " + spent.toFixed(2) + " € | " +
       "Restant : " + remaining.toFixed(2) + " €";
 
-    item.append(title, details);
+    const progress = document.createElement("div");
+progress.className = "budget-progress";
+
+const bar = document.createElement("div");
+bar.className = "budget-progress-bar";
+
+const percentage = Number(budget.amount) > 0
+  ? (spent / Number(budget.amount)) * 100
+  : 0;
+
+bar.style.width = Math.min(percentage, 100) + "%";
+
+if (percentage >= 100) {
+  bar.style.background = "#dc2626";
+}
+
+progress.appendChild(bar);
+
+if (percentage >= 100) {
+  details.className = "budget-warning";
+  details.textContent += " — Budget dépassé !";
+}
+
+item.append(title, details, progress);
     container.appendChild(item);
   });
 }
