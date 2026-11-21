@@ -768,6 +768,45 @@ const { error } = await db
     container.appendChild(item);
   });
 }
+  function currentBudgetMonth() {
+  const now = new Date();
+  return now.getFullYear() + "-" +
+    String(now.getMonth() + 1).padStart(2, "0");
+}
+
+$("budgetForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const { data: { user } } = await db.auth.getUser();
+
+  if (!user) return;
+
+  const budget = {
+    user_id: user.id,
+    category: $("budgetCategory").value,
+    month: currentBudgetMonth(),
+    amount: Number($("budgetAmount").value)
+  };
+
+  const { error } = await db
+    .from("budgets")
+    .upsert(budget, {
+      onConflict: "user_id,category,month"
+    });
+
+  if (error) {
+    $("budgetMessage").textContent = "Erreur : " + error.message;
+    $("budgetMessage").classList.remove("hidden");
+    return;
+  }
+
+  $("budgetMessage").textContent = "Budget enregistré avec succès !";
+  $("budgetMessage").classList.remove("hidden");
+
+  $("budgetAmount").value = "";
+
+  await loadBudgets();
+});
   async function loadBudgets() {
   const { data, error } = await db
     .from("budgets")
