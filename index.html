@@ -1565,8 +1565,22 @@ $("accountStatus").textContent = "Connecté";
   }
 }
 
-db.auth.onAuthStateChange((_event,session) => {
-  setTimeout(() => showSession(session),0);
+db.auth.onAuthStateChange((_event, session) => {
+  setTimeout(async () => {
+    if (_event === "SIGNED_IN" && session?.user) {
+      const { error } = await db
+        .from("login_history")
+        .insert({
+          user_id: session.user.id
+        });
+
+      if (error) {
+        console.error("Erreur historique :", error.message);
+      }
+    }
+
+    await showSession(session);
+  }, 0);
 });
 
 db.auth.getSession().then(({data,error}) => {
