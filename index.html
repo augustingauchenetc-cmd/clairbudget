@@ -154,6 +154,9 @@ th{color:#78869a}
 
 <section class="panel">
 <h2>Historique des opérations</h2>
+  <button id="exportButton" type="button" style="margin-bottom:15px">
+  Télécharger mes opérations (Excel)
+</button>
 <div style="overflow-x:auto">
 <table>
 <thead>
@@ -439,6 +442,42 @@ function updateCharts() {
     }
   );
 }
+  $("exportButton").addEventListener("click", () => {
+  if (transactions.length === 0) {
+    alert("Aucune opération à exporter.");
+    return;
+  }
+
+  const rows = [
+    ["Nom", "Date", "Catégorie", "Type", "Montant (€)"],
+    ...transactions.map(t => [
+      t.description,
+      t.transaction_date,
+      t.category,
+      t.type,
+      Number(t.amount).toFixed(2)
+    ])
+  ];
+
+  const csv = "\uFEFF" + rows.map(row =>
+    row.map(value =>
+      '"' + String(value).replace(/"/g, '""') + '"'
+    ).join(";")
+  ).join("\r\n");
+
+  const blob = new Blob([csv], {
+    type: "text/csv;charset=utf-8;"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = "ClairBudget-operations.csv";
+  link.click();
+
+  URL.revokeObjectURL(url);
+});
 async function loadTransactions() {
   const {data,error} = await db.from("transactions")
     .select("*")
