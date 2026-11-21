@@ -1183,7 +1183,36 @@ async function loadSavings() {
   savingsGoals = data || [];
   renderSavings();
 }
+async function loadSavingsHistory() {
+  const container = $("savingsHistory");
+  container.replaceChildren();
 
+  const { data, error } = await db
+    .from("savings_history")
+    .select("*, savings_goals(name)")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  if (!data || data.length === 0) {
+    container.textContent = "Aucun mouvement d'épargne pour le moment.";
+    return;
+  }
+
+  data.forEach(entry => {
+    const item = document.createElement("p");
+
+    const date = new Date(entry.created_at)
+      .toLocaleDateString("fr-FR");
+
+    item.textContent =
+      date + " — " +
+      (entry.savings_goals?.name || "Objectif") +
+      " : +" + euro(Number(entry.amount));
+
+    container.appendChild(item);
+  });
+}
 $("savingsForm").addEventListener("submit", async event => {
   event.preventDefault();
 
