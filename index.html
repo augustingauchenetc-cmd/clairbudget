@@ -1539,7 +1539,36 @@ async function deleteTransaction(id) {
     message($("appMessage"),error.message,"error");
   }
 }
+async function loadLoginHistory() {
+  const container = $("loginHistory");
 
+  const { data, error } = await db
+    .from("login_history")
+    .select("created_at")
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  if (error) {
+    container.textContent = "Impossible de charger l'historique.";
+    console.error(error.message);
+    return;
+  }
+
+  container.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    container.textContent = "Aucune connexion enregistrée.";
+    return;
+  }
+
+  data.forEach(entry => {
+    const line = document.createElement("p");
+    line.textContent =
+      new Date(entry.created_at).toLocaleString("fr-FR");
+
+    container.appendChild(line);
+  });
+}
 async function showSession(session) {
   
   const connected = !!session;
