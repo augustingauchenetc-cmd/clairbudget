@@ -1162,6 +1162,65 @@ async function addSavingsMoney(id, currentAmount) {
   await loadSavings();
   await loadSavingsHistory();
 }
+  async function addSavingsWithdrawal(id, currentAmount) {
+  const value = prompt("Combien veux-tu retirer de ton épargne (€) ?");
+
+  if (value === null) return;
+
+  const amount = Number(value);
+
+  if (value.trim() === "" || !Number.isFinite(amount) || amount <= 0) {
+    alert("Entre un montant supérieur à zéro.");
+    return;
+  }
+
+  if (amount > currentAmount) {
+    alert("Tu ne peux pas retirer plus que ton épargne disponible.");
+    return;
+  }
+
+  const { data: { user }, error: userError } =
+    await db.auth.getUser();
+
+  if (userError || !user) {
+    alert("Utilisateur non connecté.");
+    return;
+  }
+
+  const { error } = await db
+    .from("savings_goals")
+    .update({ saved_amount: currentAmount - amount })
+    .eq("id", id);
+
+  if (error) {
+    alert("Erreur : " + error.message);
+    return;
+  }
+
+  const { error: historyError } = await db
+    .from("savings_history")
+    .insert({
+      user_id: user.id,
+      goal_id: id,
+      amount: amount,
+      movement_type: "retrait"
+    });
+
+  if (historyError) {
+    await db
+      .from("savings_goals")
+      .update({ saved_amount: currentAmount })
+      .eq("id", id);
+
+    alert("Erreur dans l'historique : " + historyError.message);
+    return;
+  }
+
+  $("savingsMessage").textContent = "Retrait enregistré avec succès !";
+
+  await loadSavings();
+  await loadSavingsHistory();
+}
 async function deleteSavingsGoal(id) {
   if (!confirm("Veux-tu vraiment supprimer cet objectif ?")) return;
 
