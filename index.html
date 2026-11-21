@@ -358,7 +358,8 @@ $("authForm").addEventListener("submit", async event => {
 });
 
   $("settingsButton").addEventListener("click", () => {
-  $("settingsPanel").classList.remove("hidden");
+ $("dashboardContent").classList.add("hidden");
+    $("settingsPanel").classList.remove("hidden");
 });
 
 $("closeSettings").addEventListener("click", () => {
