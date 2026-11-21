@@ -127,6 +127,28 @@ th{color:#78869a}
   </div>
 
   <p id="monthlyComparison"></p>
+  <section class="panel">
+  <h2>Mes budgets mensuels</h2>
+  <p>Définissez une limite de dépenses par catégorie.</p>
+
+  <form id="budgetForm">
+    <select id="budgetCategory" required></select>
+
+    <input
+      id="budgetAmount"
+      type="number"
+      min="0.01"
+      step="0.01"
+      placeholder="Budget en €"
+      required
+    >
+
+    <button type="submit">Enregistrer le budget</button>
+  </form>
+
+  <p id="budgetMessage" class="notice hidden"></p>
+  <div id="budgetList"></div>
+</section>
 </section>
   <section class="panel">
     <section class="panel">
@@ -193,6 +215,7 @@ const SUPABASE_KEY = "sb_publishable_r0DZocCFTu7vkEFQpYOGYA_Hg6qT-Nq";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let transactions = [];
+  let budgets = [];
   let categoryChart = null;
 let monthlyChart = null;
 let isSignup = false;
@@ -529,6 +552,24 @@ async function loadCategories() {
     option.value = name;
     option.textContent = name;
     select.appendChild(option);
+  });
+    const budgetSelect = $("budgetCategory");
+  budgetSelect.replaceChildren();
+
+  [...new Set([
+    "Alimentation",
+    "Logement",
+    "Transport",
+    "Loisirs",
+    "Santé",
+    "Abonnements",
+    "Autre",
+    ...customCategories.map(c => c.name)
+  ])].forEach(name => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    budgetSelect.appendChild(option);
   });
   renderCategories();
 }
