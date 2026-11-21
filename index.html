@@ -1250,7 +1250,7 @@ async function loadSavings() {
   renderSavings();
 }
   async function deleteSavingsHistoryEntry(entry) {
-  if (!confirm("Supprimer ce versement de l'historique ?")) return;
+  if (!confirm("Supprimer ce mouvement de l'historique ?")) return;
 
   const { data: goal, error: goalError } = await db
     .from("savings_goals")
