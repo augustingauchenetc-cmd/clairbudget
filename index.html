@@ -1147,6 +1147,7 @@ async function addSavingsMoney(id, currentAmount) {
     $("savingsMessage").textContent =
       "Épargne ajoutée, mais erreur d'historique : " + historyError.message;
     await loadSavings();
+    await loadSavingsHistory();
     return;
   }
 
