@@ -104,6 +104,30 @@ th{color:#78869a}
 <h1>Mon tableau de bord</h1>
 <p id="userLabel">Votre espace personnel.</p>
 <div id="appMessage" class="notice hidden"></div>
+  <section id="settingsPanel" class="panel hidden">
+  <h2>⚙️ Paramètres du compte</h2>
+
+  <h3>Modifier mon adresse e-mail</h3>
+  <form id="changeEmailForm">
+    <input id="newEmail" type="email"
+      placeholder="Nouvelle adresse e-mail" required>
+    <button type="submit">Modifier mon e-mail</button>
+  </form>
+
+  <hr>
+
+  <h3>Modifier mon mot de passe</h3>
+  <form id="changePasswordForm">
+    <input id="newPassword" type="password"
+      placeholder="Nouveau mot de passe (8 caractères minimum)"
+      minlength="8" required>
+    <button type="submit">Modifier mon mot de passe</button>
+  </form>
+
+  <button id="closeSettings" class="secondary" type="button">
+    Retour au tableau de bord
+  </button>
+</section>
 
 <section class="cards">
 <div class="card"><p>Solde disponible</p><strong id="balance">0,00 €</strong></div>
