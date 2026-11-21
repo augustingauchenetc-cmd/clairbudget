@@ -144,6 +144,7 @@ th{color:#78869a}
   </form>
 
   <p id="categoryMessage" class="notice hidden"></p>
+      <div id="categoryList"></div>
 </section>
 <h2>Ajouter une opération</h2>
 <form id="transactionForm">
@@ -529,8 +530,88 @@ async function loadCategories() {
     option.textContent = name;
     select.appendChild(option);
   });
+  renderCategories();
 }
+function renderCategories() {
+  const container = $("categoryList");
+  container.replaceChildren();
 
+  customCategories.forEach(category => {
+    const row = document.createElement("div");
+    row.style.display = "flex";
+    row.style.gap = "10px";
+    row.style.alignItems = "center";
+    row.style.marginTop = "10px";
+
+    const name = document.createElement("span");
+    name.textContent = category.name;
+    name.style.flex = "1";
+
+    const edit = document.createElement("button");
+    edit.type = "button";
+    edit.textContent = "Modifier";
+    edit.style.width = "auto";
+
+    edit.addEventListener("click", () => {
+      const newName = prompt("Nouveau nom de catégorie :", category.name);
+
+      if (newName === null) return;
+
+      renameCategory(category.id, newName.trim());
+    });
+
+    row.append(name, edit);
+    container.appendChild(row);
+  });
+}
+  async function renameCategory(id, newName) {
+  if (!newName) {
+    alert("Le nom ne peut pas être vide.");
+    return;
+  }
+
+  const category = customCategories.find(c => c.id === id);
+  if (!category) return;
+
+  if (customCategories.some(c =>
+    c.id !== id &&
+    c.name.toLowerCase() === newName.toLowerCase()
+  )) {
+    alert("Cette catégorie existe déjà.");
+    return;
+  }
+
+  const oldName = category.name;
+
+  const { error: transactionError } = await db
+    .from("transactions")
+    .update({ category: newName })
+    .eq("category", oldName);
+
+  if (transactionError) {
+    alert("Erreur lors de la mise à jour des opérations : " + transactionError.message);
+    return;
+  }
+
+  const { error: categoryError } = await db
+    .from("categories")
+    .update({ name: newName })
+    .eq("id", id);
+
+  if (categoryError) {
+    alert("Erreur lors du renommage : " + categoryError.message);
+    return;
+  }
+
+  await loadCategories();
+  await loadTransactions();
+
+  message(
+    $("categoryMessage"),
+    "Catégorie renommée et anciennes opérations mises à jour !",
+    "success"
+  );
+}
 $("categoryForm").addEventListener("submit", async event => {
   event.preventDefault();
 
