@@ -1596,6 +1596,7 @@ $("accountStatus").textContent = "Connecté";
     await loadBudgets();
     await loadSavings();
     await loadSavingsHistory();
+    await loadLoginHistory();
     clearMessage($("appMessage"));
   } catch(error) {
     message($("appMessage"),"Erreur de chargement : " + error.message,"error");
