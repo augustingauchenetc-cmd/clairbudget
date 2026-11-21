@@ -969,7 +969,7 @@ $("budgetForm").addEventListener("submit", async event => {
   budgets = data || [];
   renderBudgets();
 }
-  function renderSavings() {
+function renderSavings() {
   const container = $("savingsList");
   container.replaceChildren();
 
@@ -1001,7 +1001,6 @@ $("budgetForm").addEventListener("submit", async event => {
     const bar = document.createElement("div");
     bar.className = "budget-progress-bar";
     bar.style.width = Math.min(percentage, 100) + "%";
-
     progress.appendChild(bar);
 
     const remainingText = document.createElement("p");
@@ -1009,10 +1008,76 @@ $("budgetForm").addEventListener("submit", async event => {
       ? "Objectif atteint !"
       : "Encore " + euro(remaining) + " à économiser.";
 
-    item.append(title, details, progress, remainingText);
+    const editButton = document.createElement("button");
+    editButton.textContent = "Modifier le montant";
+    editButton.addEventListener("click", () => {
+      updateSavingsAmount(goal.id, saved);
+    });
+
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "Supprimer";
+    deleteButton.addEventListener("click", () => {
+      deleteSavingsGoal(goal.id);
+    });
+
+    item.append(
+      title,
+      details,
+      progress,
+      remainingText,
+      editButton,
+      deleteButton
+    );
+
     container.appendChild(item);
   });
 }
+
+async function updateSavingsAmount(id, currentAmount) {
+  const value = prompt(
+    "Nouveau montant économisé (€) :",
+    String(currentAmount)
+  );
+
+  if (value === null) return;
+
+  const amount = Number(value);
+
+  if (value.trim() === "" || !Number.isFinite(amount) || amount < 0) {
+    alert("Entre un montant valide, supérieur ou égal à zéro.");
+    return;
+  }
+
+  const { error } = await db
+    .from("savings_goals")
+    .update({ saved_amount: amount })
+    .eq("id", id);
+
+  if (error) {
+    $("savingsMessage").textContent = "Erreur : " + error.message;
+    return;
+  }
+
+  $("savingsMessage").textContent = "Montant modifié avec succès !";
+  await loadSavings();
+}
+
+async function deleteSavingsGoal(id) {
+  if (!confirm("Veux-tu vraiment supprimer cet objectif ?")) return;
+
+  const { error } = await db
+    .from("savings_goals")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    $("savingsMessage").textContent = "Erreur : " + error.message;
+    return;
+  }
+
+  $("savingsMessage").textContent = "Objectif supprimé avec succès !";
+  await loadSavings();
+}  
 
 async function loadSavings() {
   const { data, error } = await db
