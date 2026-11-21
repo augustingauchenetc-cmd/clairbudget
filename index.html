@@ -159,6 +159,29 @@ th{color:#78869a}
   <div id="monthlyHistory"></div>
 </section>
   <section class="panel">
+  <h2>Objectifs d'épargne</h2>
+  <p>Préparez vos projets en suivant votre épargne.</p>
+
+  <form id="savingsForm">
+    <label for="savingsName">Nom de l'objectif</label>
+    <input id="savingsName" type="text"
+      placeholder="Ex : Vacances" required>
+
+    <label for="savingsTarget">Montant à atteindre (€)</label>
+    <input id="savingsTarget" type="number"
+      min="0.01" step="0.01" required>
+
+    <label for="savingsSaved">Montant déjà économisé (€)</label>
+    <input id="savingsSaved" type="number"
+      min="0" step="0.01" value="0" required>
+
+    <button type="submit">Ajouter l'objectif</button>
+  </form>
+
+  <div id="savingsMessage"></div>
+  <div id="savingsList"></div>
+</section>
+  <section class="panel">
   <h2>Mes budgets mensuels</h2>
   <p>Définissez une limite de dépenses par catégorie.</p>
 
