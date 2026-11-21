@@ -1155,6 +1155,7 @@ async function addSavingsMoney(id, currentAmount) {
     "Argent ajouté et enregistré dans l'historique !";
 
   await loadSavings();
+  await loadSavingsHistory();
 }
 async function deleteSavingsGoal(id) {
   if (!confirm("Veux-tu vraiment supprimer cet objectif ?")) return;
