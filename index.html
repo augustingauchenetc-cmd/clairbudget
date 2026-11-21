@@ -355,6 +355,13 @@ $("authForm").addEventListener("submit", async event => {
   }
 });
 
+  $("settingsButton").addEventListener("click", () => {
+  $("settingsPanel").classList.remove("hidden");
+});
+
+$("closeSettings").addEventListener("click", () => {
+  $("settingsPanel").classList.add("hidden");
+});
 $("logout").addEventListener("click", async () => {
   const {error} = await db.auth.signOut();
   if (error) message($("appMessage"),error.message,"error");
