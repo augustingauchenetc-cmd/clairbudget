@@ -1540,7 +1540,12 @@ $("settingsButton").classList.toggle("hidden",!connected);
     transactions = [];
     return;
   }
+$("accountEmail").textContent = session.user.email;
 
+$("accountCreated").textContent =
+  new Date(session.user.created_at).toLocaleDateString("fr-FR");
+
+$("accountStatus").textContent = "Connecté";
   $("userLabel").textContent = "Connecté : " + session.user.email;
   $("date").value = new Date().toISOString().slice(0,10);
 
