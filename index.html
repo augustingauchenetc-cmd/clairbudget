@@ -380,6 +380,28 @@ $("closeSettings").addEventListener("click", () => {
 
   $("changeEmailForm").reset();
 });
+  $("changePasswordForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const newPassword = $("newPassword").value;
+
+  if (newPassword.length < 8) {
+    alert("Le mot de passe doit contenir au moins 8 caractères.");
+    return;
+  }
+
+  const { error } = await db.auth.updateUser({
+    password: newPassword
+  });
+
+  if (error) {
+    alert("Erreur : " + error.message);
+    return;
+  }
+
+  $("changePasswordForm").reset();
+  alert("Mot de passe modifié avec succès !");
+});
 $("logout").addEventListener("click", async () => {
   const {error} = await db.auth.signOut();
   if (error) message($("appMessage"),error.message,"error");
