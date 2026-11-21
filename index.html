@@ -1450,7 +1450,8 @@ async function showSession(session) {
   $("authSection").classList.toggle("hidden",connected);
   $("appSection").classList.toggle("hidden",!connected);
   $("logout").classList.toggle("hidden",!connected);
-
+$("settingsButton").classList.toggle("hidden",!connected);
+  
   if (!connected) {
     transactions = [];
     return;
