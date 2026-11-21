@@ -1114,6 +1114,14 @@ async function addSavingsMoney(id, currentAmount) {
     return;
   }
 
+  const { data: { user }, error: userError } =
+    await db.auth.getUser();
+
+  if (userError || !user) {
+    $("savingsMessage").textContent = "Erreur : utilisateur non connecté.";
+    return;
+  }
+
   const { error } = await db
     .from("savings_goals")
     .update({ saved_amount: currentAmount + amount })
@@ -1124,7 +1132,24 @@ async function addSavingsMoney(id, currentAmount) {
     return;
   }
 
-  $("savingsMessage").textContent = "Argent ajouté avec succès !";
+  const { error: historyError } = await db
+    .from("savings_history")
+    .insert({
+      user_id: user.id,
+      goal_id: id,
+      amount: amount
+    });
+
+  if (historyError) {
+    $("savingsMessage").textContent =
+      "Épargne ajoutée, mais erreur d'historique : " + historyError.message;
+    await loadSavings();
+    return;
+  }
+
+  $("savingsMessage").textContent =
+    "Argent ajouté et enregistré dans l'historique !";
+
   await loadSavings();
 }
 async function deleteSavingsGoal(id) {
