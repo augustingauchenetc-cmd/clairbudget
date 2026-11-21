@@ -9,7 +9,7 @@
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#f3f6fa;color:#202d40;font-family:Arial,sans-serif}
-header{background:#14243a;color:white;padding:22px 7%;font-size:23px;font-weight:bold}
+header{background:#14243a;color:white;padding:22px 7%;font-size:23px;font-weight:bold;display:flex;justify-content:space-between;align-items:center}
 main{max-width:1050px;margin:35px auto;padding:15px}
 h1{color:#14243a}
 .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
@@ -20,18 +20,44 @@ h1{color:#14243a}
 form{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 input,select,button{padding:12px;border:1px solid #dce3ed;border-radius:8px;font-size:14px;width:100%}
 button{background:#315fce;color:white;border:0;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.6}
+.secondary{background:#e9eef7;color:#233b60}
+.danger{background:#fff0f0;color:#c33;padding:7px}
+.auth{max-width:480px;margin:40px auto}
+.auth form{grid-template-columns:1fr}
+.notice{padding:12px;border-radius:8px;background:#eef4ff;color:#254779;margin:12px 0}
+.error{background:#fff0f0;color:#a52b35}
+.success{background:#eaf8f1;color:#176b4a}
+.hidden{display:none!important}
 table{width:100%;border-collapse:collapse}
 th,td{text-align:left;padding:12px 7px;border-bottom:1px solid #edf0f4;font-size:13px}
 th{color:#78869a}
-.delete{background:#fff0f0;color:#c33;padding:7px;width:auto}
 @media(max-width:650px){.cards{grid-template-columns:1fr}form{grid-template-columns:1fr}main{margin:15px auto}}
 </style>
 </head>
 <body>
-<header>◈ ClairBudget</header>
+<header>
+<span>◈ ClairBudget</span>
+<button id="logout" class="secondary hidden" style="width:auto">Déconnexion</button>
+</header>
+
 <main>
+<section id="authSection" class="panel auth">
+<h1>Bienvenue sur ClairBudget</h1>
+<p>Connectez-vous à votre espace personnel.</p>
+<div id="authMessage" class="notice hidden"></div>
+<form id="authForm">
+<input id="email" type="email" placeholder="Adresse e-mail" required>
+<input id="password" type="password" placeholder="Mot de passe (8 caractères minimum)" minlength="8" required>
+<button id="authSubmit" type="submit">Se connecter</button>
+</form>
+<button id="toggleAuth" class="secondary" type="button" style="margin-top:12px">Créer un compte</button>
+</section>
+
+<section id="appSection" class="hidden">
 <h1>Mon tableau de bord</h1>
-<p>Bienvenue sur votre espace de gestion financière.</p>
+<p id="userLabel">Votre espace personnel.</p>
+<div id="appMessage" class="notice hidden"></div>
 
 <section class="cards">
 <div class="card"><p>Solde disponible</p><strong id="balance">0,00 €</strong></div>
@@ -41,12 +67,12 @@ th{color:#78869a}
 
 <section class="panel">
 <h2>Ajouter une opération</h2>
-<form id="form">
-<input id="name" placeholder="Nom de l'opération" required>
+<form id="transactionForm">
+<input id="name" placeholder="Nom de l'opération" maxlength="120" required>
 <input id="amount" type="number" min="0.01" step="0.01" placeholder="Montant en €" required>
 <select id="type">
-<option value="expense">Dépense</option>
-<option value="income">Revenu</option>
+<option value="depense">Dépense</option>
+<option value="revenu">Revenu</option>
 </select>
 <select id="category">
 <option>Alimentation</option>
@@ -59,7 +85,7 @@ th{color:#78869a}
 <option>Autre</option>
 </select>
 <input id="date" type="date" required>
-<button type="submit">+ Ajouter l'opération</button>
+<button id="addButton" type="submit">+ Ajouter l'opération</button>
 </form>
 </section>
 
@@ -67,48 +93,208 @@ th{color:#78869a}
 <h2>Historique des opérations</h2>
 <div style="overflow-x:auto">
 <table>
-<thead><tr><th>Nom</th><th>Date</th><th>Catégorie</th><th>Montant</th><th></th></tr></thead>
+<thead>
+<tr><th>Nom</th><th>Date</th><th>Catégorie</th><th>Montant</th><th></th></tr>
+</thead>
 <tbody id="history"></tbody>
 </table>
 </div>
 </section>
+</section>
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-let operations=JSON.parse(localStorage.getItem("clairbudget")||"[]");
-const euro=n=>n.toLocaleString("fr-FR",{style:"currency",currency:"EUR"});
-function display(){
-let income=operations.filter(o=>o.type==="income").reduce((s,o)=>s+o.amount,0);
-let expenses=operations.filter(o=>o.type==="expense").reduce((s,o)=>s+o.amount,0);
-document.getElementById("balance").textContent=euro(income-expenses);
-document.getElementById("income").textContent=euro(income);
-document.getElementById("expenses").textContent=euro(expenses);
-document.getElementById("history").innerHTML=operations.map((o,i)=>`<tr>
-<td>${escapeText(o.name)}</td><td>${escapeText(o.date)}</td>
-<td>${escapeText(o.category)}</td>
-<td style="color:${o.type==="income"?"#15966b":"#d6535d"}">${o.type==="income"?"+":"-"} ${euro(o.amount)}</td>
-<td><button class="delete" onclick="removeOperation(${i})">×</button></td>
-</tr>`).join("");
-}
-function escapeText(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-document.getElementById("form").addEventListener("submit",e=>{
-e.preventDefault();
-operations.push({
-name:document.getElementById("name").value,
-amount:Number(document.getElementById("amount").value),
-type:document.getElementById("type").value,
-category:document.getElementById("category").value,
-date:document.getElementById("date").value
+const SUPABASE_URL = "https://btpiotlnvqpvnoxopyzn.supabase.co";
+const SUPABASE_KEY = "sb_publishable_r0DZocCFTu7vkEFQpYOGYA_Hg6qT-Nq";
+
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let transactions = [];
+let isSignup = false;
+
+const $ = id => document.getElementById(id);
+const euro = n => Number(n).toLocaleString("fr-FR", {
+  style:"currency", currency:"EUR"
 });
-localStorage.setItem("clairbudget",JSON.stringify(operations));
-e.target.reset();
-display();
-});
-function removeOperation(i){
-operations.splice(i,1);
-localStorage.setItem("clairbudget",JSON.stringify(operations));
-display();
+
+function message(target, text, kind="notice") {
+  target.textContent = text;
+  target.className = "notice " + kind;
 }
-display();
+function clearMessage(target) {
+  target.textContent = "";
+  target.className = "notice hidden";
+}
+
+$("toggleAuth").addEventListener("click", () => {
+  isSignup = !isSignup;
+  $("authSubmit").textContent = isSignup ? "Créer mon compte" : "Se connecter";
+  $("toggleAuth").textContent = isSignup ? "J'ai déjà un compte" : "Créer un compte";
+  clearMessage($("authMessage"));
+});
+
+$("authForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const email = $("email").value.trim();
+  const password = $("password").value;
+  $("authSubmit").disabled = true;
+  clearMessage($("authMessage"));
+
+  try {
+    if (isSignup) {
+      const {data,error} = await db.auth.signUp({email,password});
+      if (error) throw error;
+
+      if (data.session) {
+        message($("authMessage"),"Compte créé. Connexion en cours…","success");
+      } else {
+        message($("authMessage"),
+          "Compte créé ! Consultez vos e-mails pour confirmer votre adresse, puis connectez-vous.",
+          "success");
+      }
+    } else {
+      const {error} = await db.auth.signInWithPassword({email,password});
+      if (error) throw error;
+    }
+  } catch(error) {
+    message($("authMessage"),error.message || "Une erreur est survenue.","error");
+  } finally {
+    $("authSubmit").disabled = false;
+  }
+});
+
+$("logout").addEventListener("click", async () => {
+  const {error} = await db.auth.signOut();
+  if (error) message($("appMessage"),error.message,"error");
+});
+
+function render() {
+  const income = transactions
+    .filter(t => t.type === "revenu")
+    .reduce((s,t) => s + Number(t.amount),0);
+
+  const expenses = transactions
+    .filter(t => t.type === "depense")
+    .reduce((s,t) => s + Number(t.amount),0);
+
+  $("balance").textContent = euro(income-expenses);
+  $("income").textContent = euro(income);
+  $("expenses").textContent = euro(expenses);
+
+  const tbody = $("history");
+  tbody.replaceChildren();
+
+  transactions.forEach(t => {
+    const tr = document.createElement("tr");
+
+    [t.description,t.transaction_date,t.category].forEach(value => {
+      const td = document.createElement("td");
+      td.textContent = value;
+      tr.appendChild(td);
+    });
+
+    const amount = document.createElement("td");
+    amount.textContent = (t.type === "revenu" ? "+ " : "- ") + euro(t.amount);
+    amount.style.color = t.type === "revenu" ? "#15966b" : "#d6535d";
+    tr.appendChild(amount);
+
+    const action = document.createElement("td");
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "danger";
+    del.textContent = "Supprimer";
+    del.addEventListener("click",() => deleteTransaction(t.id));
+    action.appendChild(del);
+    tr.appendChild(action);
+    tbody.appendChild(tr);
+  });
+}
+
+async function loadTransactions() {
+  const {data,error} = await db.from("transactions")
+    .select("*")
+    .order("transaction_date",{ascending:false})
+    .order("created_at",{ascending:false});
+
+  if (error) throw error;
+  transactions = data || [];
+  render();
+}
+
+$("transactionForm").addEventListener("submit",async event => {
+  event.preventDefault();
+  $("addButton").disabled = true;
+  clearMessage($("appMessage"));
+
+  const payload = {
+    description: $("name").value.trim(),
+    amount: Number($("amount").value),
+    type: $("type").value,
+    category: $("category").value,
+    transaction_date: $("date").value
+  };
+
+  try {
+    const {error} = await db.from("transactions").insert(payload);
+    if (error) throw error;
+
+    event.target.reset();
+    $("date").value = new Date().toISOString().slice(0,10);
+    await loadTransactions();
+    message($("appMessage"),"Opération enregistrée dans votre compte.","success");
+  } catch(error) {
+    message($("appMessage"),"Erreur : " + error.message,"error");
+  } finally {
+    $("addButton").disabled = false;
+  }
+});
+
+async function deleteTransaction(id) {
+  if (!confirm("Supprimer cette opération ?")) return;
+
+  const {error} = await db.from("transactions").delete().eq("id",id);
+  if (error) {
+    message($("appMessage"),error.message,"error");
+    return;
+  }
+
+  try {
+    await loadTransactions();
+  } catch(error) {
+    message($("appMessage"),error.message,"error");
+  }
+}
+
+async function showSession(session) {
+  const connected = !!session;
+  $("authSection").classList.toggle("hidden",connected);
+  $("appSection").classList.toggle("hidden",!connected);
+  $("logout").classList.toggle("hidden",!connected);
+
+  if (!connected) {
+    transactions = [];
+    return;
+  }
+
+  $("userLabel").textContent = "Connecté : " + session.user.email;
+  $("date").value = new Date().toISOString().slice(0,10);
+
+  try {
+    await loadTransactions();
+    clearMessage($("appMessage"));
+  } catch(error) {
+    message($("appMessage"),"Erreur de chargement : " + error.message,"error");
+  }
+}
+
+db.auth.onAuthStateChange((_event,session) => {
+  setTimeout(() => showSession(session),0);
+});
+
+db.auth.getSession().then(({data,error}) => {
+  if (error) message($("authMessage"),error.message,"error");
+  showSession(data.session);
+});
 </script>
 </body>
 </html>
