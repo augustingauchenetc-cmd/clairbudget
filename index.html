@@ -129,6 +129,22 @@ th{color:#78869a}
   <p id="monthlyComparison"></p>
 </section>
   <section class="panel">
+    <section class="panel">
+  <h2>Mes catégories personnalisées</h2>
+  <p>Ajoutez vos propres catégories de dépenses et de revenus.</p>
+
+  <form id="categoryForm">
+    <input
+      id="newCategory"
+      placeholder="Nom de la nouvelle catégorie"
+      maxlength="40"
+      required
+    >
+    <button type="submit">+ Créer une catégorie</button>
+  </form>
+
+  <p id="categoryMessage" class="notice hidden"></p>
+</section>
 <h2>Ajouter une opération</h2>
 <form id="transactionForm">
 <input id="name" placeholder="Nom de l'opération" maxlength="120" required>
@@ -478,6 +494,79 @@ function updateCharts() {
 
   URL.revokeObjectURL(url);
 });
+  let customCategories = [];
+
+async function loadCategories() {
+  const { data, error } = await db
+    .from("categories")
+    .select("*")
+    .order("name");
+
+  if (error) throw error;
+
+  customCategories = data || [];
+
+  const select = $("category");
+  select.replaceChildren();
+
+  const defaultCategories = [
+    "Alimentation",
+    "Logement",
+    "Transport",
+    "Loisirs",
+    "Santé",
+    "Abonnements",
+    "Salaire",
+    "Autre"
+  ];
+
+  [...new Set([
+    ...defaultCategories,
+    ...customCategories.map(c => c.name)
+  ])].forEach(name => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    select.appendChild(option);
+  });
+}
+
+$("categoryForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const name = $("newCategory").value.trim();
+
+  if (!name) return;
+const { data: { user }, error: userError } =
+  await db.auth.getUser();
+
+if (userError || !user) {
+  message($("categoryMessage"), "Utilisateur non connecté.", "error");
+  return;
+}
+
+const { error } = await db
+  .from("categories")
+  .insert({
+    name,
+    user_id: user.id
+  });
+  
+
+  if (error) {
+    message($("categoryMessage"), error.message, "error");
+    return;
+  }
+
+  $("newCategory").value = "";
+
+  try {
+    await loadCategories();
+    message($("categoryMessage"), "Catégorie créée avec succès !", "success");
+  } catch (error) {
+    message($("categoryMessage"), error.message, "error");
+  }
+});
 async function loadTransactions() {
   const {data,error} = await db.from("transactions")
     .select("*")
@@ -549,6 +638,7 @@ async function showSession(session) {
   $("date").value = new Date().toISOString().slice(0,10);
 
   try {
+    await loadCategories();
     await loadTransactions();
     clearMessage($("appMessage"));
   } catch(error) {
