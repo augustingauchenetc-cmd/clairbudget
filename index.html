@@ -1263,7 +1263,9 @@ data.forEach(entry => {
   label.textContent =
     date + " — " +
     (entry.savings_goals?.name || "Objectif") +
-    " : +" + euro(Number(entry.amount)) + " ";
+    " : " +
+(entry.movement_type === "retrait" ? "− " : "+ ") +
+euro(Number(entry.amount)) + " ";
 
   const button = document.createElement("button");
   button.textContent = "Supprimer";
