@@ -1263,7 +1263,12 @@ async function loadSavings() {
     return;
   }
 
-  const newAmount = Number(goal.saved_amount) - Number(entry.amount);
+  const current = Number(goal.saved_amount);
+const amount = Number(entry.amount);
+
+const newAmount = entry.movement_type === "retrait"
+  ? current + amount
+  : current - amount;
 
   if (newAmount < 0) {
     alert("Le montant de l'objectif est incohérent.");
