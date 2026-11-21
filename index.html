@@ -270,6 +270,7 @@ const SUPABASE_KEY = "sb_publishable_r0DZocCFTu7vkEFQpYOGYA_Hg6qT-Nq";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let transactions = [];
   let budgets = [];
+  let savingsGoals = [];
   let categoryChart = null;
 let monthlyChart = null;
 let isSignup = false;
@@ -967,6 +968,97 @@ $("budgetForm").addEventListener("submit", async event => {
   budgets = data || [];
   renderBudgets();
 }
+  function renderSavings() {
+  const container = $("savingsList");
+  container.replaceChildren();
+
+  if (savingsGoals.length === 0) {
+    container.textContent = "Aucun objectif d'épargne pour le moment.";
+    return;
+  }
+
+  savingsGoals.forEach(goal => {
+    const target = Number(goal.target_amount);
+    const saved = Number(goal.saved_amount);
+    const remaining = Math.max(target - saved, 0);
+    const percentage = target > 0 ? saved / target * 100 : 0;
+
+    const item = document.createElement("div");
+    item.className = "budget-item";
+
+    const title = document.createElement("h3");
+    title.textContent = goal.name;
+
+    const details = document.createElement("p");
+    details.textContent =
+      "Économisé : " + euro(saved) +
+      " / Objectif : " + euro(target);
+
+    const progress = document.createElement("div");
+    progress.className = "budget-progress";
+
+    const bar = document.createElement("div");
+    bar.className = "budget-progress-bar";
+    bar.style.width = Math.min(percentage, 100) + "%";
+
+    progress.appendChild(bar);
+
+    const remainingText = document.createElement("p");
+    remainingText.textContent = remaining === 0
+      ? "Objectif atteint !"
+      : "Encore " + euro(remaining) + " à économiser.";
+
+    item.append(title, details, progress, remainingText);
+    container.appendChild(item);
+  });
+}
+
+async function loadSavings() {
+  const { data, error } = await db
+    .from("savings_goals")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  savingsGoals = data || [];
+  renderSavings();
+}
+
+$("savingsForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const { data: { user }, error: userError } =
+    await db.auth.getUser();
+
+  if (userError || !user) return;
+
+  const goal = {
+    user_id: user.id,
+    name: $("savingsName").value.trim(),
+    target_amount: Number($("savingsTarget").value),
+    saved_amount: Number($("savingsSaved").value)
+  };
+
+  if (!goal.name || goal.target_amount <= 0 || goal.saved_amount < 0) {
+    return;
+  }
+
+  const { error } = await db
+    .from("savings_goals")
+    .insert(goal);
+
+  if (error) {
+    $("savingsMessage").textContent = "Erreur : " + error.message;
+    return;
+  }
+
+  $("savingsForm").reset();
+  $("savingsSaved").value = 0;
+  $("savingsMessage").textContent = "Objectif ajouté avec succès !";
+
+  await loadSavings();
+});
 async function loadTransactions() {
   const {data,error} = await db.from("transactions")
     .select("*")
