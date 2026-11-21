@@ -1013,7 +1013,11 @@ function renderSavings() {
     editButton.addEventListener("click", () => {
       updateSavingsAmount(goal.id, saved);
     });
-
+const addButton = document.createElement("button");
+addButton.textContent = "Ajouter de l'argent";
+addButton.addEventListener("click", () => {
+  addSavingsMoney(goal.id, saved);
+});
     const deleteButton = document.createElement("button");
     deleteButton.textContent = "Supprimer";
     deleteButton.addEventListener("click", () => {
@@ -1021,13 +1025,14 @@ function renderSavings() {
     });
 
     item.append(
-      title,
-      details,
-      progress,
-      remainingText,
-      editButton,
-      deleteButton
-    );
+  title,
+  details,
+  progress,
+  remainingText,
+  editButton,
+  addButton,
+  deleteButton
+);
 
     container.appendChild(item);
   });
