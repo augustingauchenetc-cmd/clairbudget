@@ -1041,6 +1041,7 @@ if (goal.target_date) {
 } else {
   dateText.textContent = "Aucune date limite définie.";
 }
+  const editButton = document.createElement("button");
     editButton.textContent = "Modifier le montant";
     editButton.addEventListener("click", () => {
       updateSavingsAmount(goal.id, saved);
