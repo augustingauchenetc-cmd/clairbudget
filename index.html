@@ -32,6 +32,30 @@ button:disabled{opacity:.6}
 table{width:100%;border-collapse:collapse}
 th,td{text-align:left;padding:12px 7px;border-bottom:1px solid #edf0f4;font-size:13px}
 th{color:#78869a}
+  .charts{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:15px;
+}
+
+.chart-help{
+  color:#778397;
+  font-size:13px;
+}
+
+.chart-wrap{
+  position:relative;
+  min-height:260px;
+}
+
+@media(max-width:750px){
+  .charts{
+    grid-template-columns:1fr;
+  }
+  .chart-wrap{
+    min-height:230px;
+  }
+}
 @media(max-width:650px){.cards{grid-template-columns:1fr}form{grid-template-columns:1fr}main{margin:15px auto}}
 </style>
 </head>
@@ -64,7 +88,23 @@ th{color:#78869a}
 <div class="card"><p>Revenus</p><strong class="green" id="income">0,00 €</strong></div>
 <div class="card"><p>Dépenses</p><strong class="red" id="expenses">0,00 €</strong></div>
 </section>
+<section class="charts">
+  <section class="panel">
+    <h2>Répartition des dépenses</h2>
+    <p class="chart-help">Visualisez vos dépenses par catégorie.</p>
+    <div class="chart-wrap">
+      <canvas id="categoryChart"></canvas>
+    </div>
+  </section>
 
+  <section class="panel">
+    <h2>Revenus et dépenses par mois</h2>
+    <p class="chart-help">Comparez vos opérations sur six mois.</p>
+    <div class="chart-wrap">
+      <canvas id="monthlyChart"></canvas>
+    </div>
+  </section>
+</section>
 <section class="panel">
 <h2>Ajouter une opération</h2>
 <form id="transactionForm">
@@ -102,7 +142,7 @@ th{color:#78869a}
 </section>
 </section>
 </main>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = "https://btpiotlnvqpvnoxopyzn.supabase.co";
@@ -110,6 +150,8 @@ const SUPABASE_KEY = "sb_publishable_r0DZocCFTu7vkEFQpYOGYA_Hg6qT-Nq";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let transactions = [];
+  let categoryChart = null;
+let monthlyChart = null;
 let isSignup = false;
 
 const $ = id => document.getElementById(id);
@@ -209,7 +251,120 @@ function render() {
     tbody.appendChild(tr);
   });
 }
+function updateCharts() {
+  if (!window.Chart) return;
 
+  // Dépenses par catégorie
+  const byCategory = {};
+
+  transactions
+    .filter(t => t.type === "depense")
+    .forEach(t => {
+      byCategory[t.category] =
+        (byCategory[t.category] || 0) + Number(t.amount);
+    });
+
+  if (categoryChart) categoryChart.destroy();
+
+  categoryChart = new Chart(
+    document.getElementById("categoryChart"),
+    {
+      type: "doughnut",
+      data: {
+        labels: Object.keys(byCategory).length
+          ? Object.keys(byCategory)
+          : ["Aucune dépense"],
+        datasets: [{
+          data: Object.keys(byCategory).length
+            ? Object.values(byCategory)
+            : [1],
+          backgroundColor: [
+            "#315fce", "#15966b", "#e3a33b",
+            "#d6535d", "#8064c8", "#42a5a0",
+            "#8b9bb0", "#bd7b52"
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: "bottom" }
+        }
+      }
+    }
+  );
+
+  // Revenus et dépenses des six derniers mois
+  const now = new Date();
+  const months = [];
+
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(
+      now.getFullYear(),
+      now.getMonth() - i,
+      1
+    );
+
+    months.push({
+      key: d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0"),
+      label: d.toLocaleDateString("fr-FR", {
+        month: "short",
+        year: "2-digit"
+      }),
+      income: 0,
+      expenses: 0
+    });
+  }
+
+  transactions.forEach(t => {
+    const month = months.find(m =>
+      m.key === String(t.transaction_date).slice(0, 7)
+    );
+
+    if (!month) return;
+
+    if (t.type === "revenu") {
+      month.income += Number(t.amount);
+    }
+
+    if (t.type === "depense") {
+      month.expenses += Number(t.amount);
+    }
+  });
+
+  if (monthlyChart) monthlyChart.destroy();
+
+  monthlyChart = new Chart(
+    document.getElementById("monthlyChart"),
+    {
+      type: "bar",
+      data: {
+        labels: months.map(m => m.label),
+        datasets: [
+          {
+            label: "Revenus",
+            data: months.map(m => m.income),
+            backgroundColor: "#15966b"
+          },
+          {
+            label: "Dépenses",
+            data: months.map(m => m.expenses),
+            backgroundColor: "#d6535d"
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    }
+  );
+}
 async function loadTransactions() {
   const {data,error} = await db.from("transactions")
     .select("*")
@@ -219,7 +374,10 @@ async function loadTransactions() {
   if (error) throw error;
   transactions = data || [];
   render();
-}
+  tbody.appendChild(tr);
+  });
+updateCharts();
+  }
 
 $("transactionForm").addEventListener("submit",async event => {
   event.preventDefault();
