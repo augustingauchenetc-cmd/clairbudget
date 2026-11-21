@@ -106,6 +106,29 @@ th{color:#78869a}
   </section>
 </section>
 <section class="panel">
+  <h2>Mon bilan mensuel</h2>
+  <p id="monthName"></p>
+
+  <div class="cards">
+    <div class="card">
+      <p>Revenus du mois</p>
+      <strong class="green" id="monthlyIncome">0,00 €</strong>
+    </div>
+
+    <div class="card">
+      <p>Dépenses du mois</p>
+      <strong class="red" id="monthlyExpenses">0,00 €</strong>
+    </div>
+
+    <div class="card">
+      <p>Résultat du mois</p>
+      <strong id="monthlyBalance">0,00 €</strong>
+    </div>
+  </div>
+
+  <p id="monthlyComparison"></p>
+</section>
+  <section class="panel">
 <h2>Ajouter une opération</h2>
 <form id="transactionForm">
 <input id="name" placeholder="Nom de l'opération" maxlength="120" required>
@@ -251,6 +274,57 @@ function render() {
     tbody.appendChild(tr);
   });
 }
+  function updateMonthlySummary() {
+  const now = new Date();
+  const currentMonth = now.toISOString().slice(0, 7);
+
+  const previousDate = new Date(
+    now.getFullYear(),
+    now.getMonth() - 1,
+    1
+  );
+
+  const previousMonth =
+    previousDate.getFullYear() + "-" +
+    String(previousDate.getMonth() + 1).padStart(2, "0");
+
+  const calculate = month => {
+    const items = transactions.filter(t =>
+      String(t.transaction_date).slice(0, 7) === month
+    );
+
+    const income = items
+      .filter(t => t.type === "revenu")
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const expenses = items
+      .filter(t => t.type === "depense")
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    return { income, expenses, balance: income - expenses };
+  };
+
+  const current = calculate(currentMonth);
+  const previous = calculate(previousMonth);
+
+  $("monthName").textContent =
+    now.toLocaleDateString("fr-FR", {
+      month: "long",
+      year: "numeric"
+    });
+
+  $("monthlyIncome").textContent = euro(current.income);
+  $("monthlyExpenses").textContent = euro(current.expenses);
+  $("monthlyBalance").textContent = euro(current.balance);
+
+  $("monthlyBalance").style.color =
+    current.balance >= 0 ? "#15966b" : "#d6535d";
+
+  const difference = current.balance - previous.balance;
+
+  $("monthlyComparison").textContent =
+    "Écart avec le mois précédent : " + euro(difference);
+}
 function updateCharts() {
   if (!window.Chart) return;
 
@@ -375,6 +449,7 @@ async function loadTransactions() {
   transactions = data || [];
   render();
   updateCharts();
+  updateMonthlySummary();
   }
 $("transactionForm").addEventListener("submit",async event => {
   event.preventDefault();
