@@ -379,7 +379,9 @@ $("closeSettings").addEventListener("click", () => {
   event.preventDefault();
 
   const newEmail = $("newEmail").value.trim();
-
+if (!confirm("Confirmer le changement de ton adresse e-mail ?")) {
+  return;
+}
   const { error } = await db.auth.updateUser({
     email: newEmail
   });
