@@ -1055,7 +1055,11 @@ if (goal.target_date) {
     addButton.addEventListener("click", () => {
       addSavingsMoney(goal.id, saved);
     });
-
+const withdrawButton = document.createElement("button");
+withdrawButton.textContent = "Retirer de l'argent";
+withdrawButton.addEventListener("click", () => {
+  addSavingsWithdrawal(goal.id, saved);
+});
     const deleteButton = document.createElement("button");
     deleteButton.textContent = "Supprimer";
     deleteButton.addEventListener("click", () => {
