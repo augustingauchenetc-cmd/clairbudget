@@ -731,6 +731,42 @@ const { error } = await db
     message($("categoryMessage"), error.message, "error");
   }
 });
+  function renderBudgets() {
+  const container = $("budgetList");
+  container.replaceChildren();
+
+  if (budgets.length === 0) {
+    container.textContent = "Aucun budget enregistré pour le moment.";
+    return;
+  }
+
+  budgets.forEach(budget => {
+    const spent = transactions
+      .filter(t =>
+        t.type === "depense" &&
+        t.category === budget.category &&
+        String(t.transaction_date).slice(0, 7) === budget.month
+      )
+      .reduce((total, t) => total + Number(t.amount), 0);
+
+    const remaining = Number(budget.amount) - spent;
+
+    const item = document.createElement("div");
+    item.className = "budget-item";
+
+    const title = document.createElement("h3");
+    title.textContent = budget.category + " — " + budget.month;
+
+    const details = document.createElement("p");
+    details.textContent =
+      "Budget : " + Number(budget.amount).toFixed(2) + " € | " +
+      "Dépensé : " + spent.toFixed(2) + " € | " +
+      "Restant : " + remaining.toFixed(2) + " €";
+
+    item.append(title, details);
+    container.appendChild(item);
+  });
+}
   async function loadBudgets() {
   const { data, error } = await db
     .from("budgets")
