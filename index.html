@@ -362,6 +362,24 @@ $("authForm").addEventListener("submit", async event => {
 $("closeSettings").addEventListener("click", () => {
   $("settingsPanel").classList.add("hidden");
 });
+  $("changeEmailForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const newEmail = $("newEmail").value.trim();
+
+  const { error } = await db.auth.updateUser({
+    email: newEmail
+  });
+
+  if (error) {
+    alert("Erreur : " + error.message);
+    return;
+  }
+
+  alert("Demande de modification envoyée ! Vérifie tes e-mails pour confirmer le changement.");
+
+  $("changeEmailForm").reset();
+});
 $("logout").addEventListener("click", async () => {
   const {error} = await db.auth.signOut();
   if (error) message($("appMessage"),error.message,"error");
