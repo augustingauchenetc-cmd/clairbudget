@@ -374,11 +374,8 @@ async function loadTransactions() {
   if (error) throw error;
   transactions = data || [];
   render();
-  tbody.appendChild(tr);
-  });
-updateCharts();
+  updateCharts();
   }
-
 $("transactionForm").addEventListener("submit",async event => {
   event.preventDefault();
   $("addButton").disabled = true;
