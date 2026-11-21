@@ -174,7 +174,8 @@ th{color:#78869a}
     <label for="savingsSaved">Montant déjà économisé (€)</label>
     <input id="savingsSaved" type="number"
       min="0" step="0.01" value="0" required>
-
+<label for="savingsDate">Date limite de l'objectif</label>
+<input id="savingsDate" type="date">
     <button type="submit">Ajouter l'objectif</button>
   </form>
 
@@ -968,7 +969,6 @@ $("budgetForm").addEventListener("submit", async event => {
 
   budgets = data || [];
   renderBudgets();
-}
 function renderSavings() {
   const container = $("savingsList");
   container.replaceChildren();
@@ -1008,16 +1008,41 @@ function renderSavings() {
       ? "Objectif atteint !"
       : "Encore " + euro(remaining) + " à économiser.";
 
+    const dateText = document.createElement("p");
+
+    if (goal.target_date) {
+      const [year, month, day] = goal.target_date.split("-").map(Number);
+      const deadline = new Date(year, month - 1, day);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const days = Math.round(
+        (deadline - today) / 86400000
+      );
+
+      dateText.textContent = days < 0
+        ? "Échéance dépassée."
+        : days === 0
+          ? "C'est la date limite !"
+          : "Date limite : " +
+            deadline.toLocaleDateString("fr-FR") +
+            " — " + days + " jour(s) restant(s).";
+    } else {
+      dateText.textContent = "Aucune date limite définie.";
+    }
+
     const editButton = document.createElement("button");
     editButton.textContent = "Modifier le montant";
     editButton.addEventListener("click", () => {
       updateSavingsAmount(goal.id, saved);
     });
-const addButton = document.createElement("button");
-addButton.textContent = "Ajouter de l'argent";
-addButton.addEventListener("click", () => {
-  addSavingsMoney(goal.id, saved);
-});
+
+    const addButton = document.createElement("button");
+    addButton.textContent = "Ajouter de l'argent";
+    addButton.addEventListener("click", () => {
+      addSavingsMoney(goal.id, saved);
+    });
+
     const deleteButton = document.createElement("button");
     deleteButton.textContent = "Supprimer";
     deleteButton.addEventListener("click", () => {
@@ -1025,14 +1050,15 @@ addButton.addEventListener("click", () => {
     });
 
     item.append(
-  title,
-  details,
-  progress,
-  remainingText,
-  editButton,
-  addButton,
-  deleteButton
-);
+      title,
+      details,
+      progress,
+      remainingText,
+      dateText,
+      editButton,
+      addButton,
+      deleteButton
+    );
 
     container.appendChild(item);
   });
