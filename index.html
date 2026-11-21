@@ -1135,6 +1135,7 @@ async function showSession(session) {
     await loadCategories();
     await loadTransactions();
     await loadBudgets();
+    await loadSavings();
     clearMessage($("appMessage"));
   } catch(error) {
     message($("appMessage"),"Erreur de chargement : " + error.message,"error");
