@@ -399,7 +399,9 @@ if (!confirm("Confirmer le changement de ton adresse e-mail ?")) {
   event.preventDefault();
 
   const newPassword = $("newPassword").value;
-
+if (!confirm("Confirmer le changement de ton mot de passe ?")) {
+  return;
+}
   if (newPassword.length < 8) {
     alert("Le mot de passe doit contenir au moins 8 caractères.");
     return;
