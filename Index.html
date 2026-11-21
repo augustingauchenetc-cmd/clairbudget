@@ -1,0 +1,114 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#14243a">
+<title>ClairBudget</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f6fa;color:#202d40;font-family:Arial,sans-serif}
+header{background:#14243a;color:white;padding:22px 7%;font-size:23px;font-weight:bold}
+main{max-width:1050px;margin:35px auto;padding:15px}
+h1{color:#14243a}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+.card,.panel{background:white;padding:22px;border-radius:14px;margin-bottom:18px;box-shadow:0 3px 15px #14243a0c}
+.card p{color:#778397;margin:0}
+.card strong{font-size:25px;display:block;margin-top:12px}
+.green{color:#15966b}.red{color:#d6535d}
+form{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+input,select,button{padding:12px;border:1px solid #dce3ed;border-radius:8px;font-size:14px;width:100%}
+button{background:#315fce;color:white;border:0;font-weight:bold;cursor:pointer}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:12px 7px;border-bottom:1px solid #edf0f4;font-size:13px}
+th{color:#78869a}
+.delete{background:#fff0f0;color:#c33;padding:7px;width:auto}
+@media(max-width:650px){.cards{grid-template-columns:1fr}form{grid-template-columns:1fr}main{margin:15px auto}}
+</style>
+</head>
+<body>
+<header>◈ ClairBudget</header>
+<main>
+<h1>Mon tableau de bord</h1>
+<p>Bienvenue sur votre espace de gestion financière.</p>
+
+<section class="cards">
+<div class="card"><p>Solde disponible</p><strong id="balance">0,00 €</strong></div>
+<div class="card"><p>Revenus</p><strong class="green" id="income">0,00 €</strong></div>
+<div class="card"><p>Dépenses</p><strong class="red" id="expenses">0,00 €</strong></div>
+</section>
+
+<section class="panel">
+<h2>Ajouter une opération</h2>
+<form id="form">
+<input id="name" placeholder="Nom de l'opération" required>
+<input id="amount" type="number" min="0.01" step="0.01" placeholder="Montant en €" required>
+<select id="type">
+<option value="expense">Dépense</option>
+<option value="income">Revenu</option>
+</select>
+<select id="category">
+<option>Alimentation</option>
+<option>Logement</option>
+<option>Transport</option>
+<option>Loisirs</option>
+<option>Santé</option>
+<option>Abonnements</option>
+<option>Salaire</option>
+<option>Autre</option>
+</select>
+<input id="date" type="date" required>
+<button type="submit">+ Ajouter l'opération</button>
+</form>
+</section>
+
+<section class="panel">
+<h2>Historique des opérations</h2>
+<div style="overflow-x:auto">
+<table>
+<thead><tr><th>Nom</th><th>Date</th><th>Catégorie</th><th>Montant</th><th></th></tr></thead>
+<tbody id="history"></tbody>
+</table>
+</div>
+</section>
+</main>
+<script>
+let operations=JSON.parse(localStorage.getItem("clairbudget")||"[]");
+const euro=n=>n.toLocaleString("fr-FR",{style:"currency",currency:"EUR"});
+function display(){
+let income=operations.filter(o=>o.type==="income").reduce((s,o)=>s+o.amount,0);
+let expenses=operations.filter(o=>o.type==="expense").reduce((s,o)=>s+o.amount,0);
+document.getElementById("balance").textContent=euro(income-expenses);
+document.getElementById("income").textContent=euro(income);
+document.getElementById("expenses").textContent=euro(expenses);
+document.getElementById("history").innerHTML=operations.map((o,i)=>`<tr>
+<td>${escapeText(o.name)}</td><td>${escapeText(o.date)}</td>
+<td>${escapeText(o.category)}</td>
+<td style="color:${o.type==="income"?"#15966b":"#d6535d"}">${o.type==="income"?"+":"-"} ${euro(o.amount)}</td>
+<td><button class="delete" onclick="removeOperation(${i})">×</button></td>
+</tr>`).join("");
+}
+function escapeText(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+document.getElementById("form").addEventListener("submit",e=>{
+e.preventDefault();
+operations.push({
+name:document.getElementById("name").value,
+amount:Number(document.getElementById("amount").value),
+type:document.getElementById("type").value,
+category:document.getElementById("category").value,
+date:document.getElementById("date").value
+});
+localStorage.setItem("clairbudget",JSON.stringify(operations));
+e.target.reset();
+display();
+});
+function removeOperation(i){
+operations.splice(i,1);
+localStorage.setItem("clairbudget",JSON.stringify(operations));
+display();
+}
+display();
+</script>
+</body>
+</html>
