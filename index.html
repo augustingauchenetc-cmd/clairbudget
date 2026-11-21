@@ -363,6 +363,7 @@ $("authForm").addEventListener("submit", async event => {
 
 $("closeSettings").addEventListener("click", () => {
   $("settingsPanel").classList.add("hidden");
+  $("dashboardContent").classList.remove("hidden");
 });
   $("changeEmailForm").addEventListener("submit", async event => {
   event.preventDefault();
