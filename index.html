@@ -575,51 +575,12 @@ container.appendChild(row);
    
   });
 }
-  async function renameCategory(id, newName) {
+ async function renameCategory(id, newName) {
   if (!newName) {
     alert("Le nom ne peut pas être vide.");
     return;
   }
-async function deleteCategory(id) {
-  const category = customCategories.find(c => c.id === id);
-  if (!category) return;
 
-  const confirmed = confirm(
-    "Supprimer la catégorie « " + category.name +
-    " » ? Les anciennes opérations passeront dans Autre."
-  );
-
-  if (!confirmed) return;
-
-  const { error: transactionError } = await db
-    .from("transactions")
-    .update({ category: "Autre" })
-    .eq("category", category.name);
-
-  if (transactionError) {
-    alert("Erreur : " + transactionError.message);
-    return;
-  }
-
-  const { error: categoryError } = await db
-    .from("categories")
-    .delete()
-    .eq("id", id);
-
-  if (categoryError) {
-    alert("Erreur : " + categoryError.message);
-    return;
-  }
-
-  await loadCategories();
-  await loadTransactions();
-
-  message(
-    $("categoryMessage"),
-    "Catégorie supprimée. Les anciennes opérations sont conservées dans Autre.",
-    "success"
-  );
-}
   const category = customCategories.find(c => c.id === id);
   if (!category) return;
 
@@ -639,7 +600,7 @@ async function deleteCategory(id) {
     .eq("category", oldName);
 
   if (transactionError) {
-    alert("Erreur lors de la mise à jour des opérations : " + transactionError.message);
+    alert(transactionError.message);
     return;
   }
 
@@ -649,18 +610,50 @@ async function deleteCategory(id) {
     .eq("id", id);
 
   if (categoryError) {
-    alert("Erreur lors du renommage : " + categoryError.message);
+    alert(categoryError.message);
     return;
   }
 
   await loadCategories();
   await loadTransactions();
 
-  message(
-    $("categoryMessage"),
+  message($("categoryMessage"),
     "Catégorie renommée et anciennes opérations mises à jour !",
-    "success"
-  );
+    "success");
+}
+
+async function deleteCategory(id) {
+  const category = customCategories.find(c => c.id === id);
+  if (!category) return;
+
+  if (!confirm("Supprimer cette catégorie ? Les anciennes opérations passeront dans Autre.")) return;
+
+  const { error: transactionError } = await db
+    .from("transactions")
+    .update({ category: "Autre" })
+    .eq("category", category.name);
+
+  if (transactionError) {
+    alert(transactionError.message);
+    return;
+  }
+
+  const { error: categoryError } = await db
+    .from("categories")
+    .delete()
+    .eq("id", id);
+
+  if (categoryError) {
+    alert(categoryError.message);
+    return;
+  }
+
+  await loadCategories();
+  await loadTransactions();
+
+  message($("categoryMessage"),
+    "Catégorie supprimée. Les anciennes opérations sont conservées dans Autre.",
+    "success");
 }
 $("categoryForm").addEventListener("submit", async event => {
   event.preventDefault();
