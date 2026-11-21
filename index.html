@@ -149,6 +149,16 @@ th{color:#78869a}
 
   <p id="monthlyComparison"></p>
   <section class="panel">
+  <h2>Historique mensuel</h2>
+  <p>Consultez vos résultats des mois précédents.</p>
+
+  <select id="historyMonth">
+    <option value="">Choisir un mois</option>
+  </select>
+
+  <div id="monthlyHistory"></div>
+</section>
+  <section class="panel">
   <h2>Mes budgets mensuels</h2>
   <p>Définissez une limite de dépenses par catégorie.</p>
 
@@ -389,6 +399,78 @@ function render() {
   $("monthlyComparison").textContent =
     "Écart avec le mois précédent : " + euro(difference);
 }
+  function renderMonthlyHistory() {
+  const select = $("historyMonth");
+  const container = $("monthlyHistory");
+
+  const months = [...new Set(
+    transactions.map(t => String(t.transaction_date).slice(0, 7))
+  )].sort().reverse();
+
+  select.replaceChildren();
+
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.textContent = "Choisir un mois";
+  select.appendChild(defaultOption);
+
+  months.forEach(month => {
+    const option = document.createElement("option");
+    option.value = month;
+
+    const [year, number] = month.split("-");
+    option.textContent = new Date(
+      Number(year), Number(number) - 1, 1
+    ).toLocaleDateString("fr-FR", {
+      month: "long",
+      year: "numeric"
+    });
+
+    select.appendChild(option);
+  });
+
+  container.textContent = "Sélectionnez un mois pour consulter son bilan.";
+}
+
+$("historyMonth").addEventListener("change", () => {
+  const month = $("historyMonth").value;
+  const container = $("monthlyHistory");
+  container.replaceChildren();
+
+  if (!month) {
+    container.textContent = "Sélectionnez un mois.";
+    return;
+  }
+
+  const items = transactions.filter(t =>
+    String(t.transaction_date).slice(0, 7) === month
+  );
+
+  const income = items
+    .filter(t => t.type === "revenu")
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+
+  const expenses = items
+    .filter(t => t.type === "depense")
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+
+  const balance = income - expenses;
+
+  const result = document.createElement("div");
+  result.innerHTML = "";
+
+  [
+    "Revenus : " + euro(income),
+    "Dépenses : " + euro(expenses),
+    "Solde : " + euro(balance)
+  ].forEach(value => {
+    const p = document.createElement("p");
+    p.textContent = value;
+    result.appendChild(p);
+  });
+
+  container.appendChild(result);
+});
 function updateCharts() {
   if (!window.Chart) return;
 
@@ -873,6 +955,7 @@ async function loadTransactions() {
   render();
   updateCharts();
   updateMonthlySummary();
+  renderMonthlyHistory();
   }
 $("transactionForm").addEventListener("submit",async event => {
   event.preventDefault();
