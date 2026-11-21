@@ -731,6 +731,17 @@ const { error } = await db
     message($("categoryMessage"), error.message, "error");
   }
 });
+  async function loadBudgets() {
+  const { data, error } = await db
+    .from("budgets")
+    .select("*")
+    .order("category");
+
+  if (error) throw error;
+
+  budgets = data || [];
+  renderBudgets();
+}
 async function loadTransactions() {
   const {data,error} = await db.from("transactions")
     .select("*")
