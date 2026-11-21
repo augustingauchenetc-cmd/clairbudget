@@ -1009,30 +1009,38 @@ function renderSavings() {
       ? "Objectif atteint !"
       : "Encore " + euro(remaining) + " à économiser.";
 
-    const dateText = document.createElement("p");
+const dateText = document.createElement("p");
 
-    if (goal.target_date) {
-      const [year, month, day] = goal.target_date.split("-").map(Number);
-      const deadline = new Date(year, month - 1, day);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+if (goal.target_date) {
+  const [year, month, day] = goal.target_date.split("-").map(Number);
+  const deadline = new Date(year, month - 1, day);
 
-      const days = Math.round(
-        (deadline - today) / 86400000
-      );
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-      dateText.textContent = days < 0
-        ? "Échéance dépassée."
-        : days === 0
-          ? "C'est la date limite !"
-          : "Date limite : " +
-            deadline.toLocaleDateString("fr-FR") +
-            " — " + days + " jour(s) restant(s).";
-    } else {
-      dateText.textContent = "Aucune date limite définie.";
-    }
+  const days = Math.round(
+    (deadline - today) / 86400000
+  );
 
-    const editButton = document.createElement("button");
+  if (remaining === 0) {
+    dateText.textContent = "Objectif atteint !";
+    dateText.style.color = "green";
+  } else if (days < 0) {
+    dateText.textContent = "En retard : date limite dépassée.";
+    dateText.style.color = "red";
+  } else if (days <= 7) {
+    dateText.textContent =
+      "Attention ! Plus que " + days + " jour(s) avant l'échéance.";
+    dateText.style.color = "orange";
+  } else {
+    dateText.textContent =
+      "Date limite : " +
+      deadline.toLocaleDateString("fr-FR") +
+      " — " + days + " jour(s) restant(s).";
+  }
+} else {
+  dateText.textContent = "Aucune date limite définie.";
+}
     editButton.textContent = "Modifier le montant";
     editButton.addEventListener("click", () => {
       updateSavingsAmount(goal.id, saved);
