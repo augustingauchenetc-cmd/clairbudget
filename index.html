@@ -1185,6 +1185,57 @@ async function loadSavings() {
   savingsGoals = data || [];
   renderSavings();
 }
+  async function deleteSavingsHistoryEntry(entry) {
+  if (!confirm("Supprimer ce versement de l'historique ?")) return;
+
+  const { data: goal, error: goalError } = await db
+    .from("savings_goals")
+    .select("saved_amount")
+    .eq("id", entry.goal_id)
+    .single();
+
+  if (goalError || !goal) {
+    alert("Impossible de retrouver cet objectif.");
+    return;
+  }
+
+  const newAmount = Number(goal.saved_amount) - Number(entry.amount);
+
+  if (newAmount < 0) {
+    alert("Le montant de l'objectif est incohérent.");
+    return;
+  }
+
+  const { error: updateError } = await db
+    .from("savings_goals")
+    .update({ saved_amount: newAmount })
+    .eq("id", entry.goal_id);
+
+  if (updateError) {
+    alert("Erreur : " + updateError.message);
+    return;
+  }
+
+  const { error: deleteError } = await db
+    .from("savings_history")
+    .delete()
+    .eq("id", entry.id);
+
+  if (deleteError) {
+    await db
+      .from("savings_goals")
+      .update({ saved_amount: goal.saved_amount })
+      .eq("id", entry.goal_id);
+
+    alert("Erreur : " + deleteError.message);
+    return;
+  }
+
+  await loadSavings();
+  await loadSavingsHistory();
+
+  alert("Versement supprimé avec succès !");
+}
 async function loadSavingsHistory() {
   const container = $("savingsHistory");
   container.replaceChildren();
