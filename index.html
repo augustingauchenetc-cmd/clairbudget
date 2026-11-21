@@ -1066,7 +1066,31 @@ async function updateSavingsAmount(id, currentAmount) {
   $("savingsMessage").textContent = "Montant modifié avec succès !";
   await loadSavings();
 }
+async function addSavingsMoney(id, currentAmount) {
+  const value = prompt("Combien veux-tu ajouter à ton épargne (€) ?");
 
+  if (value === null) return;
+
+  const amount = Number(value);
+
+  if (value.trim() === "" || !Number.isFinite(amount) || amount <= 0) {
+    alert("Entre un montant supérieur à zéro.");
+    return;
+  }
+
+  const { error } = await db
+    .from("savings_goals")
+    .update({ saved_amount: currentAmount + amount })
+    .eq("id", id);
+
+  if (error) {
+    $("savingsMessage").textContent = "Erreur : " + error.message;
+    return;
+  }
+
+  $("savingsMessage").textContent = "Argent ajouté avec succès !";
+  await loadSavings();
+}
 async function deleteSavingsGoal(id) {
   if (!confirm("Veux-tu vraiment supprimer cet objectif ?")) return;
 
